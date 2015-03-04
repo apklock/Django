@@ -1,13 +1,22 @@
 from django.contrib import admin
 from myblog.models import Post
 from myblog.models import Category
-from myblog.models import Author
 
 
-class AuthorAdmin(admin.ModelAdmin):
-    pass
+class CategoryInline(admin.TabularInline):
+    model = Category.posts.through
 
 
-admin.site.register(Post)
-admin.site.register(Category)
-admin.site.register(Author, AuthorAdmin)
+class PostAdmin(admin.ModelAdmin):
+    inlines = [CategoryInline,]
+    list_display = ('title', 'author', 'created_date', 'modified_date',)
+    list_filter = ['modified_date', 'created_date']
+
+
+class CategoryAdmin(admin.ModelAdmin):
+    exclude = ('posts',)
+    list_display = ('name', 'description',)
+
+
+admin.site.register(Post, PostAdmin)
+admin.site.register(Category, CategoryAdmin)
