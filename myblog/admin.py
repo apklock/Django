@@ -1,21 +1,38 @@
 from django.contrib import admin
 from myblog.models import Post
 from myblog.models import Category
+import datetime
 
 
 class CategoryInline(admin.TabularInline):
     model = Category.posts.through
 
 
+def make_published(modeladmin, request, queryset):
+    now = datetime.datetime.now()
+    queryset.update(published_date=now)
+make_published.short_description = "Set publication date for selected posts"
+
+
 class PostAdmin(admin.ModelAdmin):
     inlines = [CategoryInline,]
-    list_display = ('title', 'author', 'created_date', 'modified_date',)
-    list_filter = ['modified_date', 'created_date']
+    list_display = ('__unicode__', 'author_for_admin', 'created_date', 
+        'modified_date', 'published_date')
+    readonly_fields = ('created_date', 'modified_date',)
+    actions = [make_published,]
+
+    def author_for_admin(self, obj):
+        author = obj.author
+        url = reverse('admin:auth_user_change', args=(author.pk,))
+        name = author.get_full_name() or author.username
+        link = '<a href="{}">{}</a>'.format(url, name)
+        return link
+    author_for_admin.short_description = 'Author'
+    author_for_admin.allow_tags = True
 
 
 class CategoryAdmin(admin.ModelAdmin):
     exclude = ('posts',)
-    list_display = ('name', 'description',)
 
 
 admin.site.register(Post, PostAdmin)
